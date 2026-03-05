@@ -1,71 +1,77 @@
-// Inicializar AOS
-AOS.init({
-  duration: 1000,
-  once: true
+// ===============================
+// INICIALIZAR AOS
+// ===============================
+document.addEventListener("DOMContentLoaded", () => {
+
+  if (typeof AOS !== "undefined") {
+    AOS.init({
+      duration: 1000,
+      once: true
+    });
+  }
+
+  animateSkills();
+  loadPortfolio();
+
 });
 
-// Animación de skills
-document.addEventListener("DOMContentLoaded", () => {
+
+// ===============================
+// ANIMACIÓN BARRAS SKILLS
+// ===============================
+function animateSkills() {
   const skillBars = document.querySelectorAll(".skill-bar");
 
   skillBars.forEach(bar => {
     const width = bar.getAttribute("data-width");
+    bar.style.width = "0%";
+
     setTimeout(() => {
+      bar.style.transition = "width 1.5s ease-in-out";
       bar.style.width = width + "%";
-    }, 500);
+    }, 300);
   });
+}
 
-  cargarPortfolio();
-});
 
-// Proyectos propios
-const proyectos = [
-  { titulo: "Juego Cachipún", categoria: "JavaScript" },
-  { titulo: "Juego Ahorcado", categoria: "JavaScript" },
-  { titulo: "Sistema Inventario", categoria: "ES6 OOP" },
-  { titulo: "API Superhéroes", categoria: "API REST" }
-];
+// ===============================
+// CARGAR PORTAFOLIO DESDE API
+// ===============================
+async function loadPortfolio() {
+  const container = document.getElementById("portfolio-container");
 
-// Cargar portfolio (proyectos + API externa)
-async function cargarPortfolio() {
+  if (!container) return;
 
-  const contenedor = document.getElementById("portfolio-container");
-
-  // Mostrar proyectos propios
-  proyectos.forEach(proyecto => {
-    contenedor.innerHTML += `
-      <div class="col-lg-4 col-md-6 mb-4" data-aos="zoom-in">
-        <div class="portfolio-wrap">
-          <img src="https://picsum.photos/400/300?random=${Math.random()}" class="img-fluid">
-          <div class="portfolio-info">
-            <h5>${proyecto.titulo}</h5>
-            <p>${proyecto.categoria}</p>
-          </div>
-        </div>
-      </div>
-    `;
-  });
-
-  // API externa Studio Ghibli
   try {
-    const response = await fetch("https://ghibliapi.vercel.app/films");
+    const response = await fetch("/api/portfolio");
     const data = await response.json();
 
-    data.slice(0, 3).forEach(film => {
-      contenedor.innerHTML += `
-        <div class="col-lg-4 col-md-6 mb-4" data-aos="zoom-in">
-          <div class="portfolio-wrap">
-            <img src="https://picsum.photos/400/300?random=${Math.random()}" class="img-fluid">
-            <div class="portfolio-info">
-              <h5>${film.title}</h5>
-              <p>${film.release_date}</p>
-            </div>
+    container.innerHTML = "";
+
+    data.forEach(item => {
+      const col = document.createElement("div");
+      col.className = "col-lg-4 col-md-6 mb-4";
+
+      col.innerHTML = `
+        <div class="portfolio-wrap shadow" data-aos="zoom-in">
+          <img src="${item.image}" class="img-fluid" alt="${item.title}">
+          <div class="portfolio-info">
+            <h5>${item.title}</h5>
+            <p>${item.description}</p>
           </div>
         </div>
       `;
+
+      container.appendChild(col);
     });
 
   } catch (error) {
-    console.error("Error cargando API:", error);
+    console.error("Error cargando portafolio:", error);
+
+    container.innerHTML = `
+      <div class="col-12 text-center text-danger">
+        <p>Error al cargar el portafolio desde la API.</p>
+      </div>
+    `;
   }
 }
