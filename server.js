@@ -1,58 +1,107 @@
+// ===============================
+// IMPORTS
+// ===============================
 import http from "http";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
-import projects from "./data/projects.js";
+import url from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// ===============================
+// CONFIG
+// ===============================
+const __dirname = path.resolve();
 const PORT = 3000;
 
+// ===============================
+// MIME TYPES
+// ===============================
+const mimeTypes = {
+  ".html": "text/html",
+  ".css": "text/css",
+  ".js": "text/javascript",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml"
+};
+
+// ===============================
+// SERVER
+// ===============================
 const server = http.createServer((req, res) => {
 
-  // API REST
-  if (req.url === "/api/projects" && req.method === "GET") {
+  const parsedUrl = url.parse(req.url, true);
+  let pathname = parsedUrl.pathname;
+
+  // ===============================
+  // API ROUTES
+  // ===============================
+
+  if (pathname === "/api/portfolio") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(projects));
+    res.end(JSON.stringify([
+      {
+        title: "Sistema de Eventos",
+        description: "Plataforma completa de gestión de eventos",
+        image: "https://picsum.photos/600/400?1"
+      },
+      {
+        title: "Landing Corporativa",
+        description: "Sitio moderno desarrollado con Bootstrap 5",
+        image: "https://picsum.photos/600/400?2"
+      },
+      {
+        title: "API Node ES6",
+        description: "Servidor HTTP sin frameworks externos",
+        image: "https://picsum.photos/600/400?3"
+      }
+    ]));
     return;
   }
 
-  // Servir index.html
-  if (req.url === "/" || req.url === "/index.html") {
-    const filePath = path.join(__dirname, "public", "index.html");
-    fs.readFile(filePath, (err, content) => {
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end(content);
-    });
+  if (pathname === "/api/skills") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify([
+      { name: "HTML", level: 95 },
+      { name: "CSS", level: 90 },
+      { name: "JavaScript", level: 92 },
+      { name: "Node.js", level: 85 }
+    ]));
     return;
   }
 
-  // Servir JS
-  if (req.url.endsWith(".js")) {
-    const filePath = path.join(__dirname, "public", req.url);
-    fs.readFile(filePath, (err, content) => {
-      res.writeHead(200, { "Content-Type": "text/javascript" });
-      res.end(content);
-    });
-    return;
+  // ===============================
+  // STATIC FILES
+  // ===============================
+
+  if (pathname === "/") {
+    pathname = "/public/index.html";
+  } else {
+    pathname = "/public" + pathname;
   }
 
-  // Servir CSS
-  if (req.url.endsWith(".css")) {
-    const filePath = path.join(__dirname, "public", req.url);
-    fs.readFile(filePath, (err, content) => {
-      res.writeHead(200, { "Content-Type": "text/css" });
-      res.end(content);
-    });
-    return;
-  }
+  const filePath = path.join(__dirname, pathname);
+  const ext = path.extname(filePath);
+  const contentType = mimeTypes[ext] || "text/plain";
 
-  // 404
-  res.writeHead(404);
-  res.end("404 Not Found");
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404, { "Content-Type": "text/html" });
+      res.end("<h1>404 - Archivo no encontrado</h1>");
+      return;
+    }
+
+    res.writeHead(200, { "Content-Type": contentType });
+    res.end(data);
+  });
+
 });
 
+// ===============================
+// START SERVER
+// ===============================
 server.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
