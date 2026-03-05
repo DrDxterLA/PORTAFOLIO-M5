@@ -1,8 +1,9 @@
 // ===============================
-// INICIALIZAR AOS
+// INICIAR CUANDO CARGA EL DOM
 // ===============================
 document.addEventListener("DOMContentLoaded", () => {
 
+  // Inicializar AOS
   if (typeof AOS !== "undefined") {
     AOS.init({
       duration: 1000,
@@ -10,21 +11,56 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  animateSkills();
+  loadSkills();
   loadPortfolio();
-
 });
 
 
 // ===============================
-// ANIMACIÓN BARRAS SKILLS
+// CARGAR HABILIDADES DESDE API
+// ===============================
+async function loadSkills() {
+  const container = document.getElementById("skills-content");
+  if (!container) return;
+
+  try {
+    const response = await fetch("/api/skills");
+    const skills = await response.json();
+
+    container.innerHTML = "";
+
+    skills.forEach(skill => {
+      const skillHTML = `
+        <div class="mb-3">
+          <span><strong>${skill.name}</strong> ${skill.level}%</span>
+          <div class="progress">
+            <div class="progress-bar bg-primary"
+                 role="progressbar"
+                 style="width: 0%"
+                 data-width="${skill.level}">
+            </div>
+          </div>
+        </div>
+      `;
+      container.innerHTML += skillHTML;
+    });
+
+    animateSkills();
+
+  } catch (error) {
+    console.error("Error cargando skills:", error);
+  }
+}
+
+
+// ===============================
+// ANIMAR BARRAS
 // ===============================
 function animateSkills() {
-  const skillBars = document.querySelectorAll(".skill-bar");
+  const bars = document.querySelectorAll(".progress-bar");
 
-  skillBars.forEach(bar => {
+  bars.forEach(bar => {
     const width = bar.getAttribute("data-width");
-    bar.style.width = "0%";
 
     setTimeout(() => {
       bar.style.transition = "width 1.5s ease-in-out";
@@ -38,22 +74,21 @@ function animateSkills() {
 // CARGAR PORTAFOLIO DESDE API
 // ===============================
 async function loadPortfolio() {
-  const container = document.getElementById("portfolio-container");
-
+  const container = document.getElementById("portfolio-content");
   if (!container) return;
 
   try {
     const response = await fetch("/api/portfolio");
-    const data = await response.json();
+    const items = await response.json();
 
     container.innerHTML = "";
 
-    data.forEach(item => {
+    items.forEach(item => {
       const col = document.createElement("div");
       col.className = "col-lg-4 col-md-6 mb-4";
 
       col.innerHTML = `
-        <div class="portfolio-wrap shadow" data-aos="zoom-in">
+        <div class="portfolio-wrap shadow">
           <img src="${item.image}" class="img-fluid" alt="${item.title}">
           <div class="portfolio-info">
             <h5>${item.title}</h5>
@@ -67,11 +102,5 @@ async function loadPortfolio() {
 
   } catch (error) {
     console.error("Error cargando portafolio:", error);
-
-    container.innerHTML = `
-      <div class="col-12 text-center text-danger">
-        <p>Error al cargar el portafolio desde la API.</p>
-      </div>
-    `;
   }
 }
